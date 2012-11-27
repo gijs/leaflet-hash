@@ -148,5 +148,5 @@
 	};
 	L.Map.prototype.addHash = function(){
 		L.hash(this);
-	}
+	};
 })(window);
