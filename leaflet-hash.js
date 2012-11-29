@@ -161,9 +161,9 @@
 			for (key in cLayers) {
 				if (cLayers[key].layer._leaflet_id && cLayers[key].layer._leaflet_id in map._layers) {
 					if (cLayers[key].overlay) {
-						overlay.push(cLayers[key].name);
+						overlay.push(encodeURIComponent(cLayers[key].name));
 					} else {
-						base.push(cLayers[key].name);
+						base.push(encodeURIComponent(cLayers[key].name));
 					}
 				}
 			}
