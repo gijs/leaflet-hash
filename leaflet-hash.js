@@ -5,10 +5,12 @@
             (doc_mode === undefined || doc_mode > 7);
     })();
     
-    L.Hash = function(map) {
+    L.Hash = function(map, lc) {
         this.onHashChange = L.Util.bind(this.onHashChange, this);
     
-        if (map) {
+        if (map && lc){
+            this.init(map, lc);
+        }else if (map) {
             this.init(map);
         }
     };
@@ -22,7 +24,7 @@
                 hash = hash.substr(1);
             }
             var args = hash.split("/");
-            if (args.length == 3) {
+            if (args.length >= 3) {
                 var zoom = parseInt(args[0], 10),
                     lat = parseFloat(args[1]),
                     lon = parseFloat(args[2]);
@@ -43,16 +45,25 @@
             var center = map.getCenter(),
                 zoom = map.getZoom(),
                 precision = Math.max(0, Math.ceil(Math.log(zoom) / Math.LN2));
-            
-            return "#" + [zoom,
+
+            var hashArray = [zoom,
                 center.lat.toFixed(precision),
                 center.lng.toFixed(precision)
-            ].join("/");
+            ];
+            if (this.lc){
+                var layers = this.onLayerChange(this.lc, this.map);
+                hashArray.push(layers.base);
+                hashArray.push(layers.overlay.join("-"))
+            }
+            return "#" + hashArray.join("/");
         },
     
-        init: function(map) {
+        init: function(map, lc) {
             this.map = map;
-            
+            if(lc){
+                this.lc = lc;
+                this.map.on("layeradd layerremove", this.onMapMove, this);
+            }
             this.map.on("moveend", this.onMapMove, this);
             
             // reset the hash
@@ -141,7 +152,26 @@
                 clearInterval(this.hashChangeInterval);
             }
             this.isListening = false;
-        }
+        },
+        onLayerChange: function(layerControl, map) {
+			var base, cLayers, key, overlay;
+			cLayers = layerControl._layers;
+			overlay = [];
+			base = [];
+			for (key in cLayers) {
+				if (cLayers[key].layer._leaflet_id && cLayers[key].layer._leaflet_id in map._layers) {
+					if (cLayers[key].overlay) {
+						overlay.push(cLayers[key].name);
+					} else {
+						base.push(cLayers[key].name);
+					}
+				}
+			}
+			return {
+				overlay: overlay,
+				base: base[0]
+			};
+		}
     };
     L.hash = function(map){
         return new L.Hash(map);	
